@@ -1,22 +1,23 @@
-package com.yupi.springbootinit.model.entity;
+package com.yupi.springbootinit.model.dto.chart;
 
-import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+
 /**
- * 用户
- * @TableName user
+ * 更新请求
+ *
+ * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
-@TableName(value ="user")
 @Data
-public class User implements Serializable {
+public class ChartUpdateRequest implements Serializable {
+
     /**
      * id
      */
@@ -24,29 +25,29 @@ public class User implements Serializable {
     private Long id;
 
     /**
-     * 账号
+     * analyze target
      */
-    private String userAccount;
+    private String goal;
 
     /**
-     * 密码
+     * raw chart data
      */
-    private String userPassword;
+    private String chartData;
 
     /**
-     * 用户昵称
+     * chart type
      */
-    private String userName;
+    private String chartType;
 
     /**
-     * 用户头像
+     * generated data chart
      */
-    private String userAvatar;
+    private String genChart;
 
     /**
-     * 用户角色：user/admin
+     * generated conclusion
      */
-    private String userRole;
+    private String genResult;
 
     /**
      * 创建时间
@@ -64,7 +65,5 @@ public class User implements Serializable {
     @TableLogic
     private Integer isDelete;
 
-    @TableField(exist = false)
     private static final long serialVersionUID = 1L;
-
 }
