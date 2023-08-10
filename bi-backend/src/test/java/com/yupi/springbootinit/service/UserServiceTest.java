@@ -21,12 +21,11 @@ public class UserServiceTest {
     void userRegister() {
         String userAccount = "yupi";
         String userPassword = "";
-        String checkPassword = "123456";
         try {
-            long result = userService.userRegister(userAccount, userPassword, checkPassword);
+            long result = userService.userRegister(userAccount, userPassword);
             Assertions.assertEquals(-1, result);
             userAccount = "yu";
-            result = userService.userRegister(userAccount, userPassword, checkPassword);
+            result = userService.userRegister(userAccount, userPassword);
             Assertions.assertEquals(-1, result);
         } catch (Exception e) {
 
