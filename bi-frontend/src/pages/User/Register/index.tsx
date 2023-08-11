@@ -1,6 +1,6 @@
 import { Footer } from '@/components';
 import { listChartByPageUsingPOST } from '@/services/zybi/chartController';
-import { getLoginUserUsingGET, userLoginUsingPOST } from '@/services/zybi/userController';
+import { getLoginUserUsingGET, userLoginUsingPOST, userRegisterUsingPOST } from '@/services/zybi/userController';
 import {
   LockOutlined,
   UserOutlined,
@@ -17,7 +17,7 @@ import { flushSync } from 'react-dom';
 import { Link } from 'react-router-dom';
 import Settings from '../../../../config/defaultSettings';
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [type, setType] = useState<string>('account');
   const { initialState, setInitialState } = useModel('@@initialState');
   const containerClassName = useEmotionCss(() => {
@@ -38,36 +38,22 @@ const Login: React.FC = () => {
     })
   })
 
-  /**
-   * After login success, fetch user login info
-   */
-  const fetchUserInfo = async () => {
-    const userInfo = await getLoginUserUsingGET();
-    if (userInfo) {
-      flushSync(() => {
-        setInitialState((s) => ({
-          ...s,
-          currentUser: userInfo,
-        }));
-      });
-    }
-  };
-  const handleSubmit = async (values: API.UserLoginRequest) => {
+  const handleSubmit = async (values: API.UserRegisterRequest) => {
     try {
-      // 登录
-      const res = await userLoginUsingPOST(values);
+      // Submit register request
+      const res = await userRegisterUsingPOST(values);
       if (res.code === 0) {
-        const defaultLoginSuccessMessage = 'Login successful!';
-        message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
+        const defaultRegisterSuccessMessage = 'Register successful!';
+        message.success(defaultRegisterSuccessMessage);
         const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
+        const redirectTo = urlParams.get('redirect') ? `?redirect=${urlParams.get('redirect')}` : '';
+        history.push(`/user/login${redirectTo}`);
         return;
       } else {
         message.error(res.message);
       }
     } catch (error) {
-      const defaultLoginFailureMessage = 'Login failed, please retry!';
+      const defaultLoginFailureMessage = 'Register failed, please retry!';
       console.log(error);
       message.error(defaultLoginFailureMessage);
     }
@@ -76,7 +62,7 @@ const Login: React.FC = () => {
     <div className={containerClassName}>
       <Helmet>
         <title>
-          {'Login'}- {Settings.title}
+          {'Register'}- {Settings.title}
         </title>
       </Helmet>
       <div
@@ -95,7 +81,7 @@ const Login: React.FC = () => {
           subTitle={'A prompt business intelligence'}
           submitter={{
             searchConfig: {
-                submitText: 'Login'
+                submitText: 'Register'
             }
           }}
           initialValues={{
@@ -111,7 +97,7 @@ const Login: React.FC = () => {
             items={[
               {
                 key: 'account',
-                label: 'Account Login',
+                label: 'Account Register',
               },
             ]}
           />
@@ -127,7 +113,7 @@ const Login: React.FC = () => {
                 rules={[
                   {
                     required: true,
-                    message: '用户名是必填项！',
+                    message: 'Please enter username!',
                   },
                 ]}
               />
@@ -141,27 +127,30 @@ const Login: React.FC = () => {
                 rules={[
                   {
                     required: true,
-                    message: '密码是必填项！',
+                    message: 'Please enter password!',
+                  },
+                ]}
+              />
+                <ProFormText.Password
+                name="checkPassword"
+                fieldProps={{
+                  size: 'large',
+                  prefix: <LockOutlined />,
+                }}
+                placeholder={'Repeat Password:'}
+                rules={[
+                  {
+                    required: true,
+                    message: 'Please repeat password!',
                   },
                 ]}
               />
             </>
           )}
-          <div
-            style={{
-              marginBottom: 24,
-            }}
-          >
-            <Link
-                to="/user/register"
-            >
-                Register
-            </Link>
-          </div>
         </LoginForm>
       </div>
       <Footer />
     </div>
   );
 };
-export default Login;
+export default Register;
