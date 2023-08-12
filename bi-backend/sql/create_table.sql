@@ -27,6 +27,7 @@ create table if not exists chart
 (
     id           bigint auto_increment comment 'id' primary key,
 	goal         text null comment 'analyze target',
+	name         varchar(128) null comment 'chart name',
 	chartData    text null comment 'raw chart data',
 	chartType    varchar(128) null comment 'chart type',
 	genChart     text null comment 'generated data chart',

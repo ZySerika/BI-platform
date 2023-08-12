@@ -36,4 +36,5 @@ public class Knife4jConfig {
                 .paths(PathSelectors.any())
                 .build();
     }
+
 }
