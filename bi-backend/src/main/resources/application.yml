@@ -61,6 +61,11 @@ mybatis-plus:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名
       logic-delete-value: 1 # 逻辑已删除值（默认为 1）
       logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
+# 鱼聪明API
+yuapi:
+  client:
+    access-key: z476gya7uhr6x1paonmwza7aomgjy7j1
+    secret-key: u23uggnyfo66l116ac8jf70d43ud294w
 # 微信相关
 wx:
   # 微信公众平台
