@@ -1,5 +1,6 @@
 package com.yupi.springbootinit.controller;
 
+import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
@@ -14,6 +15,7 @@ import com.yupi.springbootinit.constant.UserConstant;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.springbootinit.exception.ThrowUtils;
 import com.yupi.springbootinit.manager.AiManager;
+import com.yupi.springbootinit.manager.RedisLimiterManager;
 import com.yupi.springbootinit.model.dto.chart.*;
 import com.yupi.springbootinit.model.dto.file.UploadFileRequest;
 import com.yupi.springbootinit.model.entity.Chart;
@@ -36,6 +38,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 图表接口
@@ -56,6 +60,9 @@ public class ChartController {
 
     @Resource
     private AiManager aiManager;
+
+    @Resource
+    private RedisLimiterManager redisLimiterManager;
 
     private final static Gson GSON = new Gson();
 
@@ -146,32 +153,44 @@ public class ChartController {
         String goal = genChartByAiRequest.getGoal();
         String chartType = genChartByAiRequest.getChartType();
 
-        // verify
+        // verify input strings
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "empty target");
         ThrowUtils.throwIf(StringUtils.isBlank(name) && name.length()>100, ErrorCode.PARAMS_ERROR, "name too long");
 
+        // verify input file
+        long size = multipartFile.getSize();
+        String originalFileName = multipartFile.getOriginalFilename();
+        final long ONE_MB = 1024 * 1024L;
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "file size exceeded 1M");
+        String suffix = FileUtil.getSuffix(originalFileName);
+        final List<String> validFileSuffixList = Arrays.asList("xlsx", "xls");
+        ThrowUtils.throwIf(!validFileSuffixList.contains(suffix), ErrorCode.PARAMS_ERROR, "invalid file suffix");
+
+
         User loginUser = userService.getLoginUser(request);
+        // limit connection rate by user
+        redisLimiterManager.doRateLimit("genChartByAi_" + String.valueOf(loginUser.getId()));
+
         long biModelId = 1659171950288818178L;
-        // 分析需求：
-        // 分析网站用户的增长情况
-        // 原始数据：
+        
+        // raw data：
         // 日期,用户数
         // 1号,10
         // 2号,20
         // 3号,30
 
-        // 构造用户输入
+        // construct user input
         StringBuilder userInput = new StringBuilder();
         userInput.append("分析需求：").append("\n");
 
-        // 拼接分析目标
+        // concatenate objective
         String userGoal = goal;
         if (StringUtils.isNotBlank(chartType)) {
             userGoal += "，请使用" + chartType;
         }
         userInput.append(userGoal).append("\n");
         userInput.append("原始数据：").append("\n");
-        // 压缩后的数据
+        // compressed data
         String csvData = ExcelUtils.excelToCsv(multipartFile);
         userInput.append(csvData).append("\n");
 
@@ -182,7 +201,7 @@ public class ChartController {
         }
         String genChart = splits[1].trim();
         String genResult = splits[2].trim();
-        // 插入到数据库
+        // insert into database
         Chart chart = new Chart();
         chart.setName(name);
         chart.setGoal(goal);

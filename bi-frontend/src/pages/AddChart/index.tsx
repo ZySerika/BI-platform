@@ -81,8 +81,8 @@ const AddChart: React.FC = () => {
                         initialValues={{}}
                     >
 
-                        <Form.Item name="goal" label="analysis goal" rules={[{ required: true, message: 'Please enter a goal' }]}>
-                        <TextArea placeholder='enter your data analyzing goal, e.g. "analyze the trend of change in user number"'/>
+                        <Form.Item name="goal" label="objective" rules={[{ required: true, message: 'Please enter an objective' }]}>
+                        <TextArea placeholder='enter your data analyzing objective, e.g. "analyze the trend of change in user number"'/>
                         </Form.Item>
 
                         <Form.Item name="name" label="graph name">
@@ -92,7 +92,6 @@ const AddChart: React.FC = () => {
                         <Form.Item
                         name="chartType"
                         label="chart type"
-                        rules={[{ required: true, message: 'Please select a chart type!' }]}
                         >
                         <Select options={[
                             { value: 'Bar chart', label: 'Bar chart'},

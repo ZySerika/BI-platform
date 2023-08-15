@@ -4,7 +4,8 @@ export default [
     { path: '/user/register', component: './User/Register' },
     ] },
     { path: '/', redirect: '/add_chart' },
-    { name: 'add chart page', path: '/add_chart', icon: 'barChartOutlined', component: './AddChart' },
+    { name: 'add chart', path: '/add_chart', icon: 'barChart', component: './AddChart' },
+    { name: 'my charts', path: '/my_chart', icon: 'pieChart', component: './MyChart' },
   { path: '/welcome', icon: 'smile', component: './Welcome' },
   {
     path: '/admin',
