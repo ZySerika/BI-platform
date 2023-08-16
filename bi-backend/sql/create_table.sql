@@ -32,6 +32,8 @@ create table if not exists chart
 	chartType    varchar(128) null comment 'chart type',
 	genChart     text null comment 'generated data chart',
 	genResult    text null comment 'generated conclusion',
+	status       varchar(128) not null default 'wait' comment 'wait,succeed,failed,running',
+	execMessage  text null comment 'execution info',
 	userId       bigint null comment 'chart creator userId',
     createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',

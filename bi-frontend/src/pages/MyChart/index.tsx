@@ -1,5 +1,5 @@
 import { genChartByAiUsingPOST, listChartByPageUsingPOST, listMyChartByPageUsingPOST } from '@/services/zybi/chartController';
-import { Alert, Tabs, message, Form, Upload, Button, Space, Input, Select, Row, Col, Card, Divider, Spin, List, Avatar } from 'antd';
+import { Alert, Tabs, message, Form, Upload, Button, Space, Input, Select, Row, Col, Card, Divider, Spin, List, Avatar, Result } from 'antd';
 import React, { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { getInitialState } from '@/app';
@@ -14,7 +14,9 @@ const MyChartPage: React.FC = () => {
 
     const initSearchParams = {
         current: 1,
-        pageSize:12,
+        pageSize: 12,
+        sortField: 'createTime',
+        sortOrder: 'desc',
     }
     const [searchParams, setSearchParams] = useState<API.ChartQueryRequest>({...initSearchParams})
     const [chartList, setChartList] = useState<API.Chart[]>()
@@ -33,9 +35,12 @@ const MyChartPage: React.FC = () => {
                 // Erase titles in chart
                 if(res.data.records){
                     res.data.records?.forEach(data => {
-                        const chartOption = JSON.parse(data.genChart ?? '{}')
-                        chartOption.title = undefined
-                        data.genChart = JSON.stringify(chartOption)
+                        if(data.status==='succeed'){
+                            const chartOption = JSON.parse(data.genChart ?? '{}')
+                            chartOption.title = undefined
+                            data.genChart = JSON.stringify(chartOption)
+                        }
+
                     })
                 }
 
@@ -73,7 +78,7 @@ const MyChartPage: React.FC = () => {
                 lg: 2,
                 xl: 2,
                 xxl: 2,
-                column: 4}}
+            }}
             pagination={{
                 onChange: (page, pageSize) => {
                     setSearchParams({
@@ -84,6 +89,7 @@ const MyChartPage: React.FC = () => {
                 },
                 current: searchParams.current,
                 pageSize: searchParams.pageSize,
+                total: total
             }}
             loading = {loading}
             dataSource={chartList}
@@ -92,21 +98,55 @@ const MyChartPage: React.FC = () => {
                 key={item.id}
             >
                 <Card style={{width:'100%'}}>
-                <List.Item.Meta
-                avatar={<Avatar src={currentUser && currentUser.userAvatar} />}
-                title={item.name}
-                description={item.chartType ? ('chart type: ' + item.chartType) : undefined}
-                />
-                <div style={{marginBottom: 16}}/>
-                {'Objective: ' + item.goal}
-                <div style={{marginBottom: 16}}/>
-                     <ReactECharts option={item.genChart && JSON.parse(item.genChart)} /> 
+                    <List.Item.Meta
+                        avatar={<Avatar src={currentUser && currentUser.userAvatar} />}
+                        title={item.name}
+                        description={item.chartType ? ('chart type: ' + item.chartType) : undefined}
+                    />
+                    <>
+                    {
+                        item.status === 'wait' && <>
+                            <Result 
+                                status="warning"
+                                title="queueing"
+                                subTitle={item.execMessage ?? 'current generation queue is busy, please wait patiently'}
+                            />
+                        </>
+                    }
+                    {
+                        item.status === 'succeed' && <>                        
+                        <div style={{marginBottom: 16}}/>
+                            <p>{'Objective: ' + item.goal}</p>
+                        <div style={{marginBottom: 16}}/>
+                        <ReactECharts option={item.genChart && JSON.parse(item.genChart)} /> 
+                        </>
+                    }
+                    {
+                        item.status === 'failed' && <>
+                            <Result 
+                                status="error"
+                                title="Generation failed"
+                                subTitle={item.execMessage ?? 'Something went wrong during generation.'}
+                            />
+                        </>
+                    }
+                    {
+                        item.status === 'running' && <>
+                            <Result 
+                                status="info"
+                                title="Chart generating"
+                                subTitle={item.execMessage ?? 'Handling request, please wait...'}
+                            />
+                        </>
+                    }
+
+                    </>
+
                 </Card>
                
             </List.Item>
             )}
         />
-        Total: {total}
     </div>
     );
 };

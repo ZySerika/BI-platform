@@ -5,6 +5,7 @@ export default [
     ] },
     { path: '/', redirect: '/add_chart' },
     { name: 'add chart', path: '/add_chart', icon: 'barChart', component: './AddChart' },
+    { name: 'add chart async', path: '/add_chart_async', icon: 'barChart', component: './AddChartAsync' },
     { name: 'my charts', path: '/my_chart', icon: 'pieChart', component: './MyChart' },
   { path: '/welcome', icon: 'smile', component: './Welcome' },
   {

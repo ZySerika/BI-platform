@@ -40,6 +40,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 图表接口
@@ -63,6 +65,9 @@ public class ChartController {
 
     @Resource
     private RedisLimiterManager redisLimiterManager;
+
+    @Resource
+    private ThreadPoolExecutor threadPoolExecutor;
 
     private final static Gson GSON = new Gson();
 
@@ -139,15 +144,15 @@ public class ChartController {
 
 
     /**
-     * 文件上传
+     * AI chart generation (async)
      *
      * @param multipartFile
      * @param genChartByAiRequest
      * @param request
      * @return
      */
-    @PostMapping("/gen")
-    public BaseResponse<BiResponse> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
+    @PostMapping("/gen/async")
+    public BaseResponse<BiResponse> genChartByAiAsync(@RequestPart("file") MultipartFile multipartFile,
                                              GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
         String name = genChartByAiRequest.getName();
         String goal = genChartByAiRequest.getGoal();
@@ -172,7 +177,123 @@ public class ChartController {
         redisLimiterManager.doRateLimit("genChartByAi_" + String.valueOf(loginUser.getId()));
 
         long biModelId = 1659171950288818178L;
-        
+
+        // raw data：
+        // 日期,用户数
+        // 1号,10
+        // 2号,20
+        // 3号,30
+
+        // construct user input
+        StringBuilder userInput = new StringBuilder();
+        userInput.append("分析需求：").append("\n");
+
+        // concatenate objective
+        String userGoal = goal;
+        if (StringUtils.isNotBlank(chartType)) {
+            userGoal += "，请使用" + chartType;
+        }
+        userInput.append(userGoal).append("\n");
+        userInput.append("原始数据：").append("\n");
+        // compressed data
+        String csvData = ExcelUtils.excelToCsv(multipartFile);
+        userInput.append(csvData).append("\n");
+        // insert into database
+        Chart chart = new Chart();
+        chart.setName(name);
+        chart.setGoal(goal);
+        chart.setChartData(csvData);
+        chart.setChartType(chartType);
+        chart.setStatus("wait");
+        chart.setUserId(loginUser.getId());
+        boolean saveResult = chartService.save(chart);
+        ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+
+
+        // todo: deal with error
+        CompletableFuture.runAsync(() -> {
+            try {
+                // edit chart to "running"
+                Chart updateChart = new Chart();
+                updateChart.setId(chart.getId());
+                updateChart.setStatus("running");
+                boolean b = chartService.updateById(updateChart);
+                if (!b) {
+                    handleChartUpdateError(chart.getId(), "chart update failed");
+                    return;
+                }
+                String result = aiManager.doChat(biModelId, userInput.toString());
+                String[] splits = result.split("【【【【【");
+                if (splits.length < 3) {
+                    handleChartUpdateError(chart.getId(), "AI generation failed");
+                }
+                String genChart = splits[1].trim();
+                String genResult = splits[2].trim();
+                Chart updateChartResult = new Chart();
+                updateChartResult.setId(chart.getId());
+                updateChartResult.setGenChart(genChart);
+                updateChartResult.setGenResult(genResult);
+                updateChartResult.setStatus("succeed");
+                boolean updateResult = chartService.updateById(updateChartResult);
+                if (!updateResult) {
+                    handleChartUpdateError(chart.getId(), "chart update failed");
+                }
+            } catch (Exception e){
+                handleChartUpdateError(chart.getId(), e.getMessage());
+            }
+        }, threadPoolExecutor);
+
+        BiResponse biResponse = new BiResponse();
+        biResponse.setChartId(chart.getId());
+        return ResultUtils.success(biResponse);
+    }
+
+    private void handleChartUpdateError(long chartId, String execMessage) {
+        Chart updateChartResult = new Chart();
+        updateChartResult.setId(chartId);
+        updateChartResult.setStatus("failed");
+        updateChartResult.setExecMessage(execMessage);
+        boolean updateResult = chartService.updateById(updateChartResult);
+        if(!updateResult) {
+            log.error("chart update failed" + chartId + "," + execMessage);
+        }
+    }
+
+    /**
+     * AI chart generation (sync)
+     *
+     * @param multipartFile
+     * @param genChartByAiRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/gen")
+    public BaseResponse<BiResponse> genChartByAi(@RequestPart("file") MultipartFile multipartFile,
+                                                 GenChartByAiRequest genChartByAiRequest, HttpServletRequest request) {
+        String name = genChartByAiRequest.getName();
+        String goal = genChartByAiRequest.getGoal();
+        String chartType = genChartByAiRequest.getChartType();
+
+        // verify input strings
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "empty target");
+        ThrowUtils.throwIf(StringUtils.isBlank(name) && name.length()>100, ErrorCode.PARAMS_ERROR, "name too long");
+
+        // verify input file
+        long size = multipartFile.getSize();
+        String originalFileName = multipartFile.getOriginalFilename();
+        final long ONE_MB = 1024 * 1024L;
+        ThrowUtils.throwIf(size > ONE_MB, ErrorCode.PARAMS_ERROR, "file size exceeded 1M");
+        String suffix = FileUtil.getSuffix(originalFileName);
+        final List<String> validFileSuffixList = Arrays.asList("xlsx", "xls");
+        ThrowUtils.throwIf(!validFileSuffixList.contains(suffix), ErrorCode.PARAMS_ERROR, "invalid file suffix");
+
+
+        User loginUser = userService.getLoginUser(request);
+        // limit connection rate by user
+        redisLimiterManager.doRateLimit("genChartByAi_" + String.valueOf(loginUser.getId()));
+
+        long biModelId = 1659171950288818178L;
+
         // raw data：
         // 日期,用户数
         // 1号,10
