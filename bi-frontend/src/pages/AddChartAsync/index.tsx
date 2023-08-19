@@ -1,4 +1,4 @@
-import { genChartByAiAsyncUsingPOST, genChartByAiUsingPOST, listChartByPageUsingPOST } from '@/services/zybi/chartController';
+import { genChartByAiAsyncMqUsingPOST, genChartByAiAsyncUsingPOST, genChartByAiUsingPOST, listChartByPageUsingPOST } from '@/services/zybi/chartController';
 import {
   LockOutlined,
   UploadOutlined,
@@ -40,7 +40,8 @@ const AddChartAsync: React.FC = () => {
             file: undefined
         }
         try {
-            const res = await genChartByAiAsyncUsingPOST(params, {}, values.file.file.originFileObj) 
+            // const res = await genChartByAiAsyncUsingPOST(params, {}, values.file.file.originFileObj) 
+            const res = await genChartByAiAsyncMqUsingPOST(params, {}, values.file.file.originFileObj) 
             if(!res){
                 message.error('error: response fetch failed')
             }
