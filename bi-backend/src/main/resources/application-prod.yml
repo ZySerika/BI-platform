@@ -2,8 +2,12 @@
 # @author <a href="https://github.com/liyupi">程序员鱼皮</a>
 # @from <a href="https://yupi.icu">编程导航知识星球</a>
 server:
-  port: 8101
+  port: 8080
 spring:
+  application:
+    name: zybi-backend
+  session:
+    timeout: 2592000
   # 数据库配置
   # todo 需替换配置
   datasource:
@@ -19,12 +23,16 @@ spring:
     port: 6379
     timeout: 5000
     password: 123456
-  # Elasticsearch 配置
-  # todo 需替换配置
-  elasticsearch:
-    uris: http://localhost:9200
-    username: root
-    password: 123456
+  servlet:
+    multipart:
+      # 大小限制
+      max-file-size: 10MB
+  rabbitmq:
+    host: 10.182.0.2
+    port: 5672
+    password: admin
+    username: admin
+
 mybatis-plus:
   configuration:
     # 生产环境关闭日志
