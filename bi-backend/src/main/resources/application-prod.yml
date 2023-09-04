@@ -22,7 +22,7 @@ spring:
   # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/zybi
+    url: jdbc:mysql://34.68.173.123:3306
     username: root
     password: 123456
   # Redis 配置
