@@ -3,10 +3,15 @@ package com.yupi.springbootinit.bizmq;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+
+@Component
 public class BiInitMain {
 
-    public static void main(String[] args) {
+    @PostConstruct
+    public void init() {
         try {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost("localhost");
