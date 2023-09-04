@@ -3,27 +3,30 @@ package com.yupi.springbootinit.bizmq;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
 @Component
-public class BiInitMain implements CommandLineRunner {
+public class BiInitMain {
 
-    @Override
-    public void run(String... args) throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
-        try (Connection connection = factory.newConnection(); Channel channel = connection.createChannel()) {
-            String EXCHANGE_NAME = "bi_exchange";
+    @PostConstruct
+    public void init() {
+        try {
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost("localhost");
+            Connection connection = factory.newConnection();
+            Channel channel = connection.createChannel();
+
+            String EXCHANGE_NAME = BiMqConstant.BI_EXCHANGE_NAME;
             channel.exchangeDeclare(EXCHANGE_NAME, "direct");
 
-            String queueName = "bi_queue";
+            String queueName = BiMqConstant.BI_QUEUE_NAME;
             channel.queueDeclare(queueName, true, false, false, null);
-            channel.queueBind(queueName, EXCHANGE_NAME, "bi_routing_key");
+            channel.queueBind(queueName, EXCHANGE_NAME, BiMqConstant.BI_ROUTING_KEY);
+
         } catch (Exception e) {
-            e.printStackTrace();
+
         }
     }
 }
