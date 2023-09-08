@@ -20,7 +20,6 @@ public class RedissonConfig {
 
     @Bean
     public RedissonClient getRedissonClient() {
-        // 1. Create config object
         Config config = new Config();
         config.useSingleServer()
                 .setDatabase(database)

@@ -3,7 +3,7 @@
 # @from <a href="https://yupi.icu">编程导航知识星球</a>
 server:
   address: 0.0.0.0
-  port: 8080
+  port: 8000
   servlet:
     context-path: /api
     # cookie 30 天过期
@@ -22,9 +22,9 @@ spring:
   # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://34.68.173.123:3306
+    url: jdbc:mysql://localhost:3306/zybi
     username: root
-    password: 123456
+    password: admin
   # Redis 配置
   # todo 需替换配置
   redis:
@@ -38,7 +38,7 @@ spring:
       # 大小限制
       max-file-size: 10MB
   rabbitmq:
-    host: localhost
+    host: 170.106.170.25
     port: 5672
     password: admin
     username: admin

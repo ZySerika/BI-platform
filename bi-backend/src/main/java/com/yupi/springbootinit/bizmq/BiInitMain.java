@@ -9,7 +9,8 @@ public class BiInitMain {
     public static void main(String[] args) {
         try {
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
+            factory.setHost("170.106.170.25"); // default change to localhost
+            factory.setPort(5672); // choose port, comment out if on localhost
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
