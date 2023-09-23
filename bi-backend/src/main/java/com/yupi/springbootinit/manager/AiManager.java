@@ -1,5 +1,6 @@
 package com.yupi.springbootinit.manager;
 
+import com.yupi.springbootinit.api.OpenAiApi;
 import com.yupi.springbootinit.common.ErrorCode;
 import com.yupi.springbootinit.exception.BusinessException;
 import com.yupi.yucongming.dev.client.YuCongMingClient;
@@ -19,8 +20,11 @@ public class AiManager {
     @Resource
     private YuCongMingClient yuCongMingClient;
 
+    @Resource
+    private OpenAiApi openAIClient;
+
     /**
-     * AI 对话
+     * Invoke AI API
      *
      * @param modelId
      * @param message
@@ -35,5 +39,9 @@ public class AiManager {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 响应错误");
         }
         return response.getData().getContent();
+    }
+
+    public String doChat(String message) {
+        return openAIClient.doChat(message);
     }
 }

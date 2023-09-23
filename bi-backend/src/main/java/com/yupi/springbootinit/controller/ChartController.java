@@ -44,12 +44,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 
-/**
- * 图表接口
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
- */
 @RestController
 @RequestMapping("/chart")
 @Slf4j
@@ -179,27 +173,9 @@ public class ChartController {
         // limit connection rate by user
         redisLimiterManager.doRateLimit("genChartByAi_" + String.valueOf(loginUser.getId()));
 
-
-        // raw data：
-        // 日期,用户数
-        // 1号,10
-        // 2号,20
-        // 3号,30
-
-        // construct user input
-        StringBuilder userInput = new StringBuilder();
-        userInput.append("分析需求：").append("\n");
-
-        // concatenate objective
-        String userGoal = goal;
-        if (StringUtils.isNotBlank(chartType)) {
-            userGoal += "，请使用" + chartType;
-        }
-        userInput.append(userGoal).append("\n");
-        userInput.append("原始数据：").append("\n");
         // compressed data
         String csvData = ExcelUtils.excelToCsv(multipartFile);
-        userInput.append(csvData).append("\n");
+
         // insert into database
         Chart chart = new Chart();
         chart.setName(name);
@@ -209,7 +185,7 @@ public class ChartController {
         chart.setStatus("wait");
         chart.setUserId(loginUser.getId());
         boolean saveResult = chartService.save(chart);
-        ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+        ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "error saving graph");
         long newChartId = chart.getId();
 
         biMessageProducer.sendMessage(String.valueOf(newChartId));
@@ -300,7 +276,7 @@ public class ChartController {
                     handleChartUpdateError(chart.getId(), "chart update failed");
                     return;
                 }
-                String result = aiManager.doChat(biModelId, userInput.toString());
+                String result = aiManager.doChat(userInput.toString());
                 String[] splits = result.split("【【【【【");
                 if (splits.length < 3) {
                     handleChartUpdateError(chart.getId(), "AI generation failed");
@@ -382,23 +358,23 @@ public class ChartController {
 
         // construct user input
         StringBuilder userInput = new StringBuilder();
-        userInput.append("分析需求：").append("\n");
+        userInput.append("GOAL:").append("\\n");
 
         // concatenate objective
         String userGoal = goal;
         if (StringUtils.isNotBlank(chartType)) {
-            userGoal += "，请使用" + chartType;
+            userGoal += ", please use " + chartType;
         }
-        userInput.append(userGoal).append("\n");
-        userInput.append("原始数据：").append("\n");
+        userInput.append(userGoal).append("\\n");
+        userInput.append("MYDATA:").append("\\n");
         // compressed data
         String csvData = ExcelUtils.excelToCsv(multipartFile);
-        userInput.append(csvData).append("\n");
+        userInput.append(csvData).append("\\n");
 
-        String result = aiManager.doChat(biModelId, userInput.toString());
-        String[] splits = result.split("【【【【【");
+        String result = aiManager.doChat(userInput.toString());
+        String[] splits = result.split("~~");
         if (splits.length < 3) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 生成错误");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI gen format error, please try again");
         }
         String genChart = splits[1].trim();
         String genResult = splits[2].trim();
@@ -412,7 +388,7 @@ public class ChartController {
         chart.setGenResult(genResult);
         chart.setUserId(loginUser.getId());
         boolean saveResult = chartService.save(chart);
-        ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "图表保存失败");
+        ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "failed to save graph");
         BiResponse biResponse = new BiResponse();
         biResponse.setGenChart(genChart);
         biResponse.setGenResult(genResult);

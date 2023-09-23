@@ -58,14 +58,14 @@ public class BiConsumer {
                 handleChartUpdateError(chart.getId(), "chart update failed.");
                 return;
             }
-            Callable<String> chatTask = () -> aiManager.doChat(CommonConstant.BI_MODEL_ID, buildUserInput(chart));
+            Callable<String> chatTask = () -> aiManager.doChat(buildUserInput(chart));
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Future<String> future = executor.submit(chatTask);
             String result = future.get(20, TimeUnit.SECONDS);
-            String[] splits = result.split("【【【【【");
+            String[] splits = result.split("~~");
             if (splits.length < 3) {
                 channel.basicNack(deliveryTag, false, false);
-                handleChartUpdateError(chart.getId(), "AI generation failed.");
+                handleChartUpdateError(chart.getId(), "AI generation format error: please prompt again");
             }
             String genChart = splits[1].trim();
             String genResult = splits[2].trim();
@@ -100,17 +100,17 @@ public class BiConsumer {
         String csvData = chart.getChartData();
         // construct user input
         StringBuilder userInput = new StringBuilder();
-        userInput.append("分析需求：").append("\n");
+        userInput.append("GOAL: ").append("\\n");
 
         // concatenate objective
         String userGoal = goal;
         if (StringUtils.isNotBlank(chartType)) {
-            userGoal += "，请使用" + chartType;
+            userGoal += ", please use " + chartType;
         }
-        userInput.append(userGoal).append("\n");
-        userInput.append("原始数据：").append("\n");
+        userInput.append(userGoal).append("\\n");
+        userInput.append("MYDATA: ").append("\\n");
         // compressed data
-        userInput.append(csvData).append("\n");
+        userInput.append(csvData).append("\\n");
         return userInput.toString();
     }
 
